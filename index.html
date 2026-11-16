@@ -15,10 +15,12 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
 <style>
+
 /* =====================================
    DG-DEV MEDIA URL GENERATOR
    RED CYBER PREMIUM THEME
 ===================================== */
+
 :root {
   --red:#ff1744;
   --red-dark:#a80024;
@@ -143,23 +145,23 @@ button { cursor:pointer; }
 }
 
 /* =====================================
-   MEDIA TYPE TABS
+   MEDIA TYPE TABS (4 columns now)
 ===================================== */
 .type-tabs {
-  display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+  display:grid; grid-template-columns:repeat(4,1fr); gap:7px;
   padding:6px; margin-bottom:26px;
   background:rgba(255,255,255,.03);
   border:1px solid var(--border);
   border-radius:15px;
 }
 .type-tab {
-  display:flex; align-items:center; justify-content:center; gap:8px;
-  padding:13px 6px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  padding:12px 4px; border-radius:10px;
   border:1px solid transparent; background:transparent;
-  color:#9a9a9a; font-weight:600; font-size:13px;
-  transition:.28s; letter-spacing:.3px;
+  color:#9a9a9a; font-weight:600; font-size:12.5px;
+  transition:.28s; letter-spacing:.2px; white-space:nowrap;
 }
-.type-tab i { font-size:14px; }
+.type-tab i { font-size:13px; }
 .type-tab:hover { color:#fff; background:rgba(255,255,255,.05); }
 .type-tab.active {
   color:#fff;
@@ -336,12 +338,20 @@ button { cursor:pointer; }
   color:#ff8fa3; background:rgba(255,23,68,.12);
   border:1px solid rgba(255,23,68,.28);
 }
+.type-badge.dl {
+  color:#5ef0a2; background:rgba(30,220,130,.1); border-color:rgba(30,220,130,.3);
+}
 .link-name {
   font-size:11.5px; color:#9a9a9a;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;
 }
 
-/* BEAUTIFUL URL TEXT */
+/* URL TEXT */
+.url-label {
+  font-size:9.5px; font-weight:700; letter-spacing:.7px; text-transform:uppercase;
+  color:#ff8fa3; margin-bottom:6px; display:flex; align-items:center; gap:6px;
+}
+.url-label i { font-size:9px; }
 .url-text {
   font-family:var(--url-font);
   font-size:12.5px; letter-spacing:.3px; line-height:1.7;
@@ -349,11 +359,18 @@ button { cursor:pointer; }
   background:rgba(255,23,68,.06);
   border:1px dashed rgba(255,23,68,.28);
   border-radius:10px; padding:10px 12px;
+  margin-bottom:8px;
+}
+.url-text.download {
+  color:#b3ffe0;
+  background:rgba(30,220,130,.06);
+  border-color:rgba(30,220,130,.28);
 }
 .url-text.small {
   font-size:11px; padding:8px 10px; line-height:1.6;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
   overflow:hidden;
+  margin-bottom:0;
 }
 .link-actions { display:flex; gap:8px; margin-top:11px; flex-wrap:wrap; }
 
@@ -366,6 +383,8 @@ button { cursor:pointer; }
 }
 .mini-btn:hover { border-color:var(--red); background:rgba(255,23,68,.14); color:#fff; }
 .mini-btn.danger:hover { background:rgba(255,23,68,.28); }
+.mini-btn.green { border-color:rgba(30,220,130,.35); color:#5ef0a2; }
+.mini-btn.green:hover { background:rgba(30,220,130,.15); border-color:#1edc82; color:#fff; }
 
 /* =====================================
    SAVED LINKS SECTION
@@ -451,8 +470,8 @@ button { cursor:pointer; }
   .page-title { font-size:22px; }
   .page-subtitle { font-size:11.5px; }
   .card { padding:19px 14px; border-radius:17px; }
-  .type-tab { font-size:11.5px; padding:11px 4px; gap:6px; }
-  .type-tab i { font-size:12px; }
+  .type-tab { font-size:11px; padding:11px 3px; gap:5px; }
+  .type-tab i { font-size:11px; }
   .server-card { padding:17px 8px; }
   .upload-zone { min-height:170px; padding:25px 12px; }
   .file-row { padding:10px; gap:9px; }
@@ -463,6 +482,10 @@ button { cursor:pointer; }
   .saved-body { flex:1 1 55%; }
   .saved-actions { flex:1 1 100%; justify-content:flex-end; }
   .watermark { font-size:24px; }
+}
+
+@media(max-width:420px) {
+  .type-tabs { grid-template-columns:repeat(2,1fr); }
 }
 </style>
 </head>
@@ -497,14 +520,14 @@ button { cursor:pointer; }
   <div class="page-head">
     <h1 class="page-title">Media URL <span>Generator</span></h1>
     <p class="page-subtitle">
-      Upload images, videos or audio files and get direct shareable links instantly.
+      Upload images, videos, audio or any file and get direct download links instantly.
     </p>
   </div>
 
   <!-- MAIN CARD -->
   <div class="card">
 
-    <!-- MEDIA TYPE TABS -->
+    <!-- MEDIA TYPE TABS (4 tabs) -->
     <div class="type-tabs" id="typeTabs">
       <button class="type-tab active" data-type="image" type="button">
         <i class="fa-solid fa-image"></i><span>Image</span>
@@ -514,6 +537,9 @@ button { cursor:pointer; }
       </button>
       <button class="type-tab" data-type="audio" type="button">
         <i class="fa-solid fa-music"></i><span>Audio</span>
+      </button>
+      <button class="type-tab" data-type="file" type="button">
+        <i class="fa-solid fa-file"></i><span>File</span>
       </button>
     </div>
 
@@ -528,24 +554,24 @@ button { cursor:pointer; }
           <span class="server-check"><i class="fa-solid fa-circle-check"></i></span>
           <span class="icon"><i class="fa-solid fa-server"></i></span>
           <div class="title">Server 1</div>
-          <span class="server-status">Cloudinary</span>
+          <span class="server-status">Direct Download</span>
         </div>
         <div class="server-card" data-server="server2">
           <span class="server-check"><i class="fa-solid fa-circle-check"></i></span>
           <span class="icon"><i class="fa-solid fa-database"></i></span>
           <div class="title">Server 2</div>
-          <span class="server-status">Cloudinary</span>
+          <span class="server-status">Direct Download</span>
         </div>
         <div class="server-card" data-server="server3">
           <span class="server-check"><i class="fa-solid fa-circle-check"></i></span>
           <span class="icon"><i class="fa-solid fa-cloud"></i></span>
           <div class="title">Server 3</div>
-          <span class="server-status">Cloudinary</span>
+          <span class="server-status">Direct Download</span>
         </div>
         <div class="server-card" data-server="server4">
           <span class="server-check"><i class="fa-solid fa-circle-check"></i></span>
           <span class="icon"><i class="fa-solid fa-rocket"></i></span>
-          <div class="title">zhip.file</div>
+          <div class="title">Server 4</div>
           <span class="server-status">Direct Download</span>
         </div>
       </div>
@@ -583,8 +609,8 @@ button { cursor:pointer; }
 
     <!-- GENERATE BUTTON -->
     <button class="btn-primary" id="uploadBtn" type="button" disabled>
-      <i class="fa-solid fa-link"></i>
-      Generate Links
+      <i class="fa-solid fa-download"></i>
+      Generate Download Links
     </button>
 
     <!-- RESULTS -->
@@ -605,7 +631,7 @@ button { cursor:pointer; }
       </button>
     </div>
     <p class="saved-desc">
-      ඔයා generate කරන හැම link එකක්ම මෙතන auto save වෙනවා. ඕන වෙලාවක open කරන්න, copy කරන්න, download කරන්න පුළුවන්.
+      ඔයා generate කරන හැම direct download link එකක්ම මෙතන auto save වෙනවා. ඕන වෙලාවක copy කරන්න, open කරන්න, download කරන්න පුළුවන්.
     </p>
     <div class="saved-list" id="savedList"></div>
   </div>
@@ -637,18 +663,17 @@ window.addEventListener('load', function() {
 });
 
 /* =====================================
-   SERVERS
-   (zhip.file: replace cloudName + uploadPreset with your real values)
+   CLOUDINARY SERVERS (all 4 active)
 ===================================== */
 const servers = {
   server1: { cloudName: "wwb8ifud", uploadPreset: "dg_dev" },
   server2: { cloudName: "rakvvolf", uploadPreset: "dg_dev1" },
   server3: { cloudName: "v2dlq2nx", uploadPreset: "dg_dev2" },
-  server4: { cloudName: "zhip_file", uploadPreset: "zhip_file" } // <-- CHANGE THESE
+  server4: { cloudName: "dxctmzctl", uploadPreset: "Dg_project" }
 };
 
 /* =====================================
-   TYPE CONFIG
+   TYPE CONFIG (now includes "file")
 ===================================== */
 const TYPE_META = {
   image: {
@@ -665,6 +690,11 @@ const TYPE_META = {
     label:'Audio', plural:'Audio', icon:'fa-music',
     accept:'audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac',
     hint:'MP3, WAV, OGG, M4A, FLAC — up to 10 files'
+  },
+  file: {
+    label:'File', plural:'Files', icon:'fa-file',
+    accept:'*/*',
+    hint:'PDF, DOC, ZIP, APK, TXT, etc. — up to 10 files'
   }
 };
 
@@ -694,7 +724,7 @@ const clearAllBtn   = document.getElementById('clearAllBtn');
    STATE
 ===================================== */
 let currentType = 'image';
-let pendingFiles = [];   // { id, file, name, size, status, url, error }
+let pendingFiles = [];   // { id, file, name, size, status, url, downloadUrl, error }
 let isUploading = false;
 let uidCounter = 0;
 let toastTimeout;
@@ -721,6 +751,24 @@ function nowString() {
   return date + ' • ' + time;
 }
 
+/**
+ * Build a direct download URL from a Cloudinary URL.
+ * Adds fl_attachment flag so browser forces download.
+ * Works for image / video / raw resource types.
+ */
+function makeDownloadUrl(url) {
+  if (typeof url !== 'string') return url;
+  if (!url.includes('res.cloudinary.com')) return url;
+  if (url.includes('fl_attachment')) return url; // already has it
+  if (url.includes('/upload/')) {
+    return url.replace('/upload/', '/upload/fl_attachment/');
+  }
+  return url;
+}
+
+/**
+ * Detect category of a file. Returns null if unknown.
+ */
 function fileCategory(file) {
   const t = (file.type || '').toLowerCase();
   if (t.startsWith('image/')) return 'image';
@@ -732,6 +780,15 @@ function fileCategory(file) {
   if (['mp4','webm','mov','avi','mkv','m4v','ogv'].includes(ext)) return 'video';
   if (['mp3','wav','ogg','m4a','aac','flac','opus'].includes(ext)) return 'audio';
   return null;
+}
+
+/**
+ * Decide whether a file matches the currently selected tab.
+ * The "File" tab accepts ANY file.
+ */
+function fileMatchesType(file, type) {
+  if (type === 'file') return true;
+  return fileCategory(file) === type;
 }
 
 function showToast(message, type = 'success') {
@@ -771,60 +828,17 @@ async function copyText(text) {
   }
 }
 
-/* =====================================
-   DOWNLOAD HELPERS
-===================================== */
 /**
- * For Cloudinary URLs, inject fl_attachment to force download.
- * For other URLs, return the original URL (client‑side Blob download will be used).
- */
-function getDirectDownloadUrl(url, type) {
-  if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
-    // Insert fl_attachment right after /upload/
-    return url.replace('/upload/', '/upload/fl_attachment/');
-  }
-  return url; // zhip.file or any other host
-}
-
-/**
- * Download a file. Tries Blob first (works for same‑origin & CORS‑enabled hosts),
- * then falls back to opening the URL with a download attribute.
+ * Force download a file. Uses fl_attachment URL directly.
  */
 async function downloadFile(url, filename) {
-  const directUrl = getDirectDownloadUrl(url);
-  if (directUrl !== url) {
-    // Cloudinary already returns Content-Disposition: attachment
-    const a = document.createElement('a');
-    a.href = directUrl;
-    a.download = filename || '';
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.click();
-    return;
-  }
-
-  // Try Blob download for other hosts
-  try {
-    const res = await fetch(url, { mode: 'cors' });
-    if (!res.ok) throw new Error('Network response was not ok');
-    const blob = await res.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = objectUrl;
-    a.download = filename || 'download';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-  } catch (e) {
-    // Fallback: open with download attribute
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename || '';
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.click();
-  }
+  const dlUrl = makeDownloadUrl(url);
+  const a = document.createElement('a');
+  a.href = dlUrl;
+  a.download = filename || '';
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.click();
 }
 
 /* =====================================
@@ -876,15 +890,19 @@ function renderFileList() {
       ready:'Ready', uploading:'Uploading', done:'Done', error:'Failed'
     }[item.status] || 'Ready';
 
+    // Show the actual category icon if we can detect it
+    const cat = fileCategory(item.file) || 'file';
+    const iconClass = TYPE_META[cat] ? TYPE_META[cat].icon : 'fa-file';
+
     row.innerHTML = `
-      <div class="file-icon"><i class="fa-solid ${TYPE_META[currentType].icon}"></i></div>
+      <div class="file-icon"><i class="fa-solid ${iconClass}"></i></div>
       <div class="file-meta">
         <strong>${esc(item.name)}</strong>
         <small>${formatFileSize(item.size)}</small>
       </div>
       <span class="status-badge ${item.status}" title="${esc(item.error || '')}">${statusText}</span>
-      ${item.status === 'done' && item.url
-        ? `<button class="row-btn" data-copy="${esc(item.url)}" title="Copy link"><i class="fa-regular fa-copy"></i></button>`
+      ${item.status === 'done' && item.downloadUrl
+        ? `<button class="row-btn" data-copy="${esc(item.downloadUrl)}" title="Copy download link"><i class="fa-regular fa-copy"></i></button>`
         : ''}
       <button class="row-btn" data-remove="${item.id}" title="Remove">
         <i class="fa-solid fa-xmark"></i>
@@ -909,7 +927,7 @@ function addFiles(list) {
       break;
     }
 
-    if (fileCategory(f) !== currentType) {
+    if (!fileMatchesType(f, currentType)) {
       showToast(f.name + ' — invalid ' + TYPE_META[currentType].label + ' file', 'error');
       continue;
     }
@@ -926,6 +944,7 @@ function addFiles(list) {
       size: f.size,
       status: 'ready',
       url: '',
+      downloadUrl: '',
       error: ''
     });
   }
@@ -976,10 +995,16 @@ document.querySelectorAll('.server-card').forEach(card => {
 });
 
 /* =====================================
-   UPLOAD (with concurrency)
+   UPLOAD
 ===================================== */
 async function uploadOne(file, server) {
-  const endpoint = currentType === 'image' ? 'image' : 'video'; // audio -> video endpoint
+  // image -> image endpoint
+  // video, audio -> video endpoint
+  // file  -> auto endpoint (Cloudinary picks the right resource type)
+  const endpoint =
+    currentType === 'image' ? 'image'
+  : currentType === 'file'  ? 'auto'
+  : 'video';
 
   const formData = new FormData();
   formData.append('file', file);
@@ -1000,14 +1025,14 @@ async function uploadOne(file, server) {
 }
 
 /**
- * Upload multiple files with a concurrency limit.
+ * Upload multiple files with a concurrency limit for speed.
  */
 async function uploadWithConcurrency(todo, server) {
   const results = [];
   const queue = [...todo];
   let active = 0;
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     function next() {
       if (queue.length === 0 && active === 0) {
         resolve(results);
@@ -1024,11 +1049,13 @@ async function uploadWithConcurrency(todo, server) {
           renderFileList();
 
           try {
-            const url = await uploadOne(item.file, server);
+            const viewUrl = await uploadOne(item.file, server);
             item.status = 'done';
-            item.url = url;
+            item.url = viewUrl;
+            item.downloadUrl = makeDownloadUrl(viewUrl);
             results.push({
-              url: url,
+              url: viewUrl,
+              downloadUrl: item.downloadUrl,
               name: item.name,
               type: currentType,
               time: nowString()
@@ -1074,7 +1101,7 @@ async function uploadAll() {
 
     if (newEntries.length) {
       addSaved(newEntries);
-      showToast(newEntries.length + ' link(s) generated & saved!');
+      showToast(newEntries.length + ' direct download link(s) generated!');
       setTimeout(() => resultArea.scrollIntoView({ behavior:'smooth', block:'nearest' }), 120);
     } else {
       showToast('Upload failed. Please try again.', 'error');
@@ -1083,7 +1110,7 @@ async function uploadAll() {
     showToast('Upload failed. Please try again.', 'error');
   } finally {
     isUploading = false;
-    uploadBtn.innerHTML = `<i class="fa-solid fa-link"></i> Generate Links`;
+    uploadBtn.innerHTML = `<i class="fa-solid fa-download"></i> Generate Download Links`;
     renderFileList();
     renderResults();
   }
@@ -1092,7 +1119,7 @@ async function uploadAll() {
 uploadBtn.addEventListener('click', uploadAll);
 
 /* =====================================
-   RESULTS
+   RESULTS (showing download URLs)
 ===================================== */
 function renderResults() {
   const done = pendingFiles.filter(i => i.status === 'done' && i.url);
@@ -1103,40 +1130,41 @@ function renderResults() {
     return;
   }
 
-  const meta = TYPE_META[currentType];
-
   resultArea.classList.add('visible');
   resultArea.innerHTML = `
     <div class="result-title">
       <i class="fa-solid fa-circle-check"></i>
-      ${done.length} Link${done.length > 1 ? 's' : ''} Generated
+      ${done.length} Direct Download Link${done.length > 1 ? 's' : ''} Ready
     </div>
     <p class="result-description">
-      ඔයාගේ files upload වුණා. Direct links copy කරගන්න, open කරන්න හෝ download කරන්න.
+      පහල තියන download link එක copy කරලා ඕනෑම තැනක share කරන්න. Click කරාම සිරාවටම download වෙනවා.
     </p>
     <div class="link-list">
-      ${done.map(item => `
+      ${done.map(item => {
+        const cat = fileCategory(item.file) || currentType;
+        const meta = TYPE_META[cat] || TYPE_META.file;
+        return `
         <div class="link-card">
           <div class="link-card-top">
-            <span class="type-badge">
-              <i class="fa-solid ${meta.icon}"></i> ${meta.label}
-            </span>
+            <span class="type-badge"><i class="fa-solid ${meta.icon}"></i> ${meta.label}</span>
+            <span class="type-badge dl"><i class="fa-solid fa-download"></i> Direct Download</span>
             <span class="link-name">${esc(item.name)}</span>
           </div>
-          <div class="url-text">${esc(item.url)}</div>
+          <div class="url-label"><i class="fa-solid fa-download"></i> Download URL</div>
+          <div class="url-text download">${esc(item.downloadUrl)}</div>
           <div class="link-actions">
-            <button class="mini-btn" data-copy="${esc(item.url)}">
-              <i class="fa-regular fa-copy"></i> Copy
+            <button class="mini-btn green" data-copy="${esc(item.downloadUrl)}">
+              <i class="fa-regular fa-copy"></i> Copy Download
             </button>
             <button class="mini-btn" data-open="${esc(item.url)}">
-              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open
+              <i class="fa-solid fa-eye"></i> Preview
             </button>
-            <button class="mini-btn" data-download="${esc(item.url)}" data-filename="${esc(item.name)}">
-              <i class="fa-solid fa-download"></i> Download
+            <button class="mini-btn" data-download="${esc(item.downloadUrl)}" data-filename="${esc(item.name)}">
+              <i class="fa-solid fa-cloud-arrow-down"></i> Download
             </button>
           </div>
-        </div>
-      `).join('')}
+        </div>`;
+      }).join('')}
     </div>
   `;
 }
@@ -1148,7 +1176,12 @@ function getSaved() {
   try {
     const raw = localStorage.getItem(SAVED_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    // Migrate old entries: ensure downloadUrl exists
+    return parsed.map(item => ({
+      ...item,
+      downloadUrl: item.downloadUrl || makeDownloadUrl(item.url)
+    }));
   } catch (e) {
     return [];
   }
@@ -1184,7 +1217,7 @@ function renderSaved() {
     savedList.innerHTML = `
       <div class="empty-state">
         <i class="fa-solid fa-link-slash"></i>
-        <p>තාම links save වෙලා නැහැ.<br>Generate කරන links මෙතන auto පෙන්නයි.</p>
+        <p>තාම links save වෙලා නැහැ.<br>Generate කරන download links මෙතන auto පෙන්නයි.</p>
       </div>
     `;
     return;
@@ -1201,20 +1234,20 @@ function renderSaved() {
         <div class="saved-thumb">${thumb}</div>
         <div class="saved-body">
           <div class="saved-name">${esc(item.name || 'media')}</div>
-          <div class="url-text small">${esc(item.url)}</div>
+          <div class="url-text small download">${esc(item.downloadUrl || item.url)}</div>
           <div class="saved-time">
             <i class="fa-regular fa-clock"></i> ${esc(item.time || '')}
           </div>
         </div>
         <div class="saved-actions">
-          <button class="mini-btn" data-copy="${esc(item.url)}" title="Copy">
+          <button class="mini-btn green" data-copy="${esc(item.downloadUrl || item.url)}" title="Copy download link">
             <i class="fa-regular fa-copy"></i>
           </button>
-          <button class="mini-btn" data-open="${esc(item.url)}" title="Open">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <button class="mini-btn" data-open="${esc(item.url)}" title="Preview">
+            <i class="fa-solid fa-eye"></i>
           </button>
-          <button class="mini-btn" data-download="${esc(item.url)}" data-filename="${esc(item.name)}" title="Download">
-            <i class="fa-solid fa-download"></i>
+          <button class="mini-btn" data-download="${esc(item.downloadUrl || item.url)}" data-filename="${esc(item.name)}" title="Download">
+            <i class="fa-solid fa-cloud-arrow-down"></i>
           </button>
           <button class="mini-btn danger" data-del="${esc(item.url)}" title="Delete">
             <i class="fa-solid fa-trash"></i>
@@ -1243,11 +1276,11 @@ document.addEventListener('click', async function(e) {
   const copyBtn = e.target.closest('[data-copy]');
   if (copyBtn) {
     const ok = await copyText(copyBtn.dataset.copy);
-    if (ok) showToast('Link copied successfully!');
+    if (ok) showToast('Download link copied!');
     return;
   }
 
-  /* OPEN */
+  /* OPEN (preview) */
   const openBtn = e.target.closest('[data-open]');
   if (openBtn) {
     window.open(openBtn.dataset.open, '_blank', 'noopener,noreferrer');
