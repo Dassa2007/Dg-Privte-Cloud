@@ -145,7 +145,7 @@ button { cursor:pointer; }
 }
 
 /* =====================================
-   MEDIA TYPE TABS (4 columns now)
+   MEDIA TYPE TABS (4 columns)
 ===================================== */
 .type-tabs {
   display:grid; grid-template-columns:repeat(4,1fr); gap:7px;
@@ -759,6 +759,10 @@ function nowString() {
 function makeDownloadUrl(url) {
   if (typeof url !== 'string') return url;
   if (!url.includes('res.cloudinary.com')) return url;
+  
+  // 'raw' URLs (PDF/ZIP) සඳහා fl_attachment එකතු කරන්නේ නැත (401 error එක එන නිසා)
+  if (url.includes('/raw/upload/')) return url;
+  
   if (url.includes('fl_attachment')) return url; // already has it
   if (url.includes('/upload/')) {
     return url.replace('/upload/', '/upload/fl_attachment/');
@@ -829,16 +833,25 @@ async function copyText(text) {
 }
 
 /**
- * Force download a file. Uses fl_attachment URL directly.
+ * Force download a file. Uses fl_attachment URL directly for images/videos.
+ * For 'raw' (PDF/ZIP) files, uses standard a.download attribute.
  */
 async function downloadFile(url, filename) {
+  const isRaw = url.includes('/raw/upload/');
   const dlUrl = makeDownloadUrl(url);
+
   const a = document.createElement('a');
   a.href = dlUrl;
-  a.download = filename || '';
-  a.target = '_blank';
+  if (filename) a.download = filename;
+  
+  // raw files වලට new tab එකේ අවශ්‍ය නැහැ, a.download එකෙන්ම වැඩ කරනවා
+  if (!isRaw) {
+    a.target = '_blank';
+  }
   a.rel = 'noopener';
+  document.body.appendChild(a);
   a.click();
+  a.remove();
 }
 
 /* =====================================
@@ -998,12 +1011,10 @@ document.querySelectorAll('.server-card').forEach(card => {
    UPLOAD
 ===================================== */
 async function uploadOne(file, server) {
-  // image -> image endpoint
-  // video, audio -> video endpoint
-  // file  -> auto endpoint (Cloudinary picks the right resource type)
+  // image -> image, video/audio -> video, file -> raw (PDF, ZIP etc.)
   const endpoint =
     currentType === 'image' ? 'image'
-  : currentType === 'file'  ? 'auto'
+  : currentType === 'file'  ? 'raw'
   : 'video';
 
   const formData = new FormData();
