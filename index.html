@@ -337,7 +337,6 @@ button { cursor:pointer; }
   border:1px solid rgba(255,23,68,.28);
 }
 .type-badge.dl { color:#5ef0a2; background:rgba(30,220,130,.1); border-color:rgba(30,220,130,.3); }
-.type-badge.short { color:#60a5fa; background:rgba(59,130,246,.1); border-color:rgba(59,130,246,.3); }
 .link-name {
   font-size:11.5px; color:#9a9a9a;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;
@@ -363,13 +362,6 @@ button { cursor:pointer; }
   background:rgba(30,220,130,.06);
   border-color:rgba(30,220,130,.28);
 }
-.url-text.short {
-  color:#bfdbfe;
-  background:rgba(59,130,246,.06);
-  border-color:rgba(59,130,246,.28);
-  font-weight:600;
-  margin-bottom:0;
-}
 .url-text.small {
   font-size:11px; padding:8px 10px; line-height:1.6;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
@@ -389,8 +381,6 @@ button { cursor:pointer; }
 .mini-btn.danger:hover { background:rgba(255,23,68,.28); }
 .mini-btn.green { border-color:rgba(30,220,130,.35); color:#5ef0a2; }
 .mini-btn.green:hover { background:rgba(30,220,130,.15); border-color:#1edc82; color:#fff; }
-.mini-btn.blue { border-color:rgba(59,130,246,.35); color:#60a5fa; }
-.mini-btn.blue:hover { background:rgba(59,130,246,.15); border-color:#3b82f6; color:#fff; }
 
 /* =====================================
    SAVED LINKS SECTION
@@ -705,7 +695,7 @@ const TYPE_META = {
 };
 
 const MAX_FILES = 10;
-const SAVED_KEY = 'dgdev_media_links_v4'; // v4 - fixed extension issue
+const SAVED_KEY = 'dgdev_media_links_v5'; // v5 - Removed short links
 const CONCURRENCY = 3;
 
 /* =====================================
@@ -755,22 +745,6 @@ function nowString() {
   const date = d.toLocaleDateString(undefined, { day:'2-digit', month:'short' });
   const time = d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
   return date + ' • ' + time;
-}
-
-/**
- * Force URL Shortening using TinyURL API (No API key needed, permanent links)
- */
-async function shortenUrl(longUrl) {
-  try {
-    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-    if (res.ok) {
-      const text = await res.text();
-      if (text && text.startsWith('http')) return text;
-    }
-  } catch (e) {
-    console.warn('URL Shortening failed:', e);
-  }
-  return longUrl;
 }
 
 /**
@@ -946,8 +920,8 @@ function renderFileList() {
         <small>${formatFileSize(item.size)}</small>
       </div>
       <span class="status-badge ${item.status}" title="${esc(item.error || '')}">${statusText}</span>
-      ${item.status === 'done' && item.shortUrl
-        ? `<button class="row-btn" data-copy="${esc(item.shortUrl)}" title="Copy Short link"><i class="fa-regular fa-copy"></i></button>`
+      ${item.status === 'done' && item.downloadUrl
+        ? `<button class="row-btn" data-copy="${esc(item.downloadUrl)}" title="Copy download link"><i class="fa-regular fa-copy"></i></button>`
         : ''}
       <button class="row-btn" data-remove="${item.id}" title="Remove">
         <i class="fa-solid fa-xmark"></i>
@@ -987,7 +961,6 @@ function addFiles(list) {
       status: 'ready',
       url: '',
       downloadUrl: '',
-      shortUrl: '',
       error: ''
     });
   }
@@ -1094,19 +1067,13 @@ async function uploadWithConcurrency(todo, server) {
 
           try {
             const viewUrl = await uploadOne(item.file, server);
-            item.url = viewUrl;
-            
-            const longDownloadUrl = makeDownloadUrl(viewUrl, item.name);
-            item.downloadUrl = longDownloadUrl;
-
-            item.shortUrl = await shortenUrl(longDownloadUrl);
-
             item.status = 'done';
+            item.url = viewUrl;
+            item.downloadUrl = makeDownloadUrl(viewUrl, item.name);
             
             results.push({
               url: item.url,
               downloadUrl: item.downloadUrl,
-              shortUrl: item.shortUrl,
               name: item.name,
               type: currentType,
               time: nowString()
@@ -1144,7 +1111,7 @@ async function uploadAll() {
 
   isUploading = true;
   renderFileList();
-  uploadBtn.innerHTML = `<span class="spinner"></span> Uploading & Shortening...`;
+  uploadBtn.innerHTML = `<span class="spinner"></span> Uploading...`;
 
   try {
     const newEntries = await uploadWithConcurrency(todo, server);
@@ -1187,7 +1154,7 @@ function renderResults() {
       ${done.length} Direct Download Link${done.length > 1 ? 's' : ''} Ready
     </div>
     <p class="result-description">
-      පහල තියන Short Link එක copy කරලා ඕනෑම තැනක share කරන්න. ඒක කවදාවත් expire වෙන්නේ නෑ.
+      පහල තියන download link එක copy කරලා ඕනෑම තැනක share කරන්න. Click කරාම ඔරිජිනල් නමින්ම download වෙනවා.
     </p>
     <div class="link-list">
       ${done.map(item => {
@@ -1197,19 +1164,14 @@ function renderResults() {
         <div class="link-card">
           <div class="link-card-top">
             <span class="type-badge"><i class="fa-solid ${meta.icon}"></i> ${meta.label}</span>
-            <span class="type-badge short"><i class="fa-solid fa-link"></i> Short Link</span>
+            <span class="type-badge dl"><i class="fa-solid fa-download"></i> Direct Download</span>
             <span class="link-name">${esc(item.name)}</span>
           </div>
-          
-          <div class="url-label"><i class="fa-solid fa-link"></i> Short Download URL (Permanent)</div>
-          <div class="url-text short">${esc(item.shortUrl)}</div>
-
+          <div class="url-label"><i class="fa-solid fa-download"></i> Download URL</div>
+          <div class="url-text download">${esc(item.downloadUrl)}</div>
           <div class="link-actions">
-            <button class="mini-btn blue" data-copy="${esc(item.shortUrl)}">
-              <i class="fa-regular fa-copy"></i> Copy Short
-            </button>
             <button class="mini-btn green" data-copy="${esc(item.downloadUrl)}">
-              <i class="fa-regular fa-copy"></i> Copy Long
+              <i class="fa-regular fa-copy"></i> Copy Download
             </button>
             <button class="mini-btn" data-open="${esc(item.url)}">
               <i class="fa-solid fa-eye"></i> Preview
@@ -1235,7 +1197,7 @@ function getSaved() {
     
     return parsed.map(item => ({
       ...item,
-      shortUrl: item.shortUrl || item.downloadUrl || makeDownloadUrl(item.url, item.name)
+      downloadUrl: item.downloadUrl || makeDownloadUrl(item.url, item.name)
     }));
   } catch (e) {
     return [];
@@ -1289,13 +1251,13 @@ function renderSaved() {
         <div class="saved-thumb">${thumb}</div>
         <div class="saved-body">
           <div class="saved-name">${esc(item.name || 'media')}</div>
-          <div class="url-text small short">${esc(item.shortUrl)}</div>
+          <div class="url-text small download">${esc(item.downloadUrl || item.url)}</div>
           <div class="saved-time">
             <i class="fa-regular fa-clock"></i> ${esc(item.time || '')}
           </div>
         </div>
         <div class="saved-actions">
-          <button class="mini-btn blue" data-copy="${esc(item.shortUrl)}" title="Copy Short Link">
+          <button class="mini-btn green" data-copy="${esc(item.downloadUrl || item.url)}" title="Copy download link">
             <i class="fa-regular fa-copy"></i>
           </button>
           <button class="mini-btn" data-open="${esc(item.url)}" title="Preview">
@@ -1331,7 +1293,7 @@ document.addEventListener('click', async function(e) {
   const copyBtn = e.target.closest('[data-copy]');
   if (copyBtn) {
     const ok = await copyText(copyBtn.dataset.copy);
-    if (ok) showToast('Link copied successfully!');
+    if (ok) showToast('Download link copied!');
     return;
   }
 
@@ -1384,4 +1346,4 @@ renderSaved();
 </script>
 
 </body>
-</html>
+   </html>
