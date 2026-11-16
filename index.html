@@ -705,7 +705,7 @@ const TYPE_META = {
 };
 
 const MAX_FILES = 10;
-const SAVED_KEY = 'dgdev_media_links_v3'; // v3 updated for URL shortening
+const SAVED_KEY = 'dgdev_media_links_v4'; // v4 - fixed extension issue
 const CONCURRENCY = 3;
 
 /* =====================================
@@ -762,7 +762,6 @@ function nowString() {
  */
 async function shortenUrl(longUrl) {
   try {
-    // අපි TinyURL use කරනවා මොකද ඒකෙන් සදහටම වැඩ කරන ලින්ක් හදන නිසා
     const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
     if (res.ok) {
       const text = await res.text();
@@ -771,12 +770,13 @@ async function shortenUrl(longUrl) {
   } catch (e) {
     console.warn('URL Shortening failed:', e);
   }
-  return longUrl; // Shorten fail උනොත් ඔරිජිනල් ලින්ක් එකම දෙනවා
+  return longUrl;
 }
 
 /**
  * Build a direct download URL with the ORIGINAL filename.
- * Uses Cloudinary's fl_attachment:filename flag.
+ * Cloudinary fl_attachment වලට extension එක දුන්නම "Invalid flag" error එක එන නිසා
+ * අපි extension එක අයින් කරලා විතරක් යවනවා (Cloudinary එකෙන් ඒක තනියම හරි කරගන්නවා).
  */
 function makeDownloadUrl(url, originalName) {
   if (typeof url !== 'string') return url;
@@ -784,15 +784,18 @@ function makeDownloadUrl(url, originalName) {
   if (url.includes('fl_attachment')) return url;
 
   let safeName = (originalName || 'download').replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  
+  // Extension එක අයින් කිරීම (උදා: my_image.png -> my_image)
+  let nameWithoutExt = safeName.substring(0, safeName.lastIndexOf('.')) || safeName;
 
   if (url.includes('/raw/upload/')) {
-    return url.replace('/raw/upload/', `/raw/upload/fl_attachment:${safeName}/`);
+    return url.replace('/raw/upload/', `/raw/upload/fl_attachment:${nameWithoutExt}/`);
   }
   if (url.includes('/image/upload/')) {
-    return url.replace('/image/upload/', `/image/upload/fl_attachment:${safeName}/`);
+    return url.replace('/image/upload/', `/image/upload/fl_attachment:${nameWithoutExt}/`);
   }
   if (url.includes('/video/upload/')) {
-    return url.replace('/video/upload/', `/video/upload/fl_attachment:${safeName}/`);
+    return url.replace('/video/upload/', `/video/upload/fl_attachment:${nameWithoutExt}/`);
   }
   return url;
 }
@@ -1093,11 +1096,9 @@ async function uploadWithConcurrency(todo, server) {
             const viewUrl = await uploadOne(item.file, server);
             item.url = viewUrl;
             
-            // 1. Long Download URL 
             const longDownloadUrl = makeDownloadUrl(viewUrl, item.name);
             item.downloadUrl = longDownloadUrl;
 
-            // 2. Shorten the URL using TinyURL
             item.shortUrl = await shortenUrl(longDownloadUrl);
 
             item.status = 'done';
@@ -1232,7 +1233,6 @@ function getSaved() {
     const parsed = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(parsed)) return [];
     
-    // Migrate old entries to ensure shortUrl exists
     return parsed.map(item => ({
       ...item,
       shortUrl: item.shortUrl || item.downloadUrl || makeDownloadUrl(item.url, item.name)
@@ -1384,4 +1384,4 @@ renderSaved();
 </script>
 
 </body>
-           </html>
+</html>
