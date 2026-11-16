@@ -15,12 +15,10 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
 <style>
-
 /* =====================================
    DG-DEV MEDIA URL GENERATOR
    RED CYBER PREMIUM THEME
 ===================================== */
-
 :root {
   --red:#ff1744;
   --red-dark:#a80024;
@@ -663,7 +661,7 @@ window.addEventListener('load', function() {
 });
 
 /* =====================================
-   CLOUDINARY SERVERS (all 4 active)
+   CLOUDINARY SERVERS
 ===================================== */
 const servers = {
   server1: { cloudName: "wwb8ifud", uploadPreset: "dg_dev" },
@@ -673,7 +671,7 @@ const servers = {
 };
 
 /* =====================================
-   TYPE CONFIG (now includes "file")
+   TYPE CONFIG
 ===================================== */
 const TYPE_META = {
   image: {
@@ -699,8 +697,8 @@ const TYPE_META = {
 };
 
 const MAX_FILES = 10;
-const SAVED_KEY = 'dgdev_media_links_v1';
-const CONCURRENCY = 3; // parallel uploads
+const SAVED_KEY = 'dgdev_media_links_v2'; // v2 updated for new filename logic
+const CONCURRENCY = 3;
 
 /* =====================================
    ELEMENTS
@@ -724,7 +722,7 @@ const clearAllBtn   = document.getElementById('clearAllBtn');
    STATE
 ===================================== */
 let currentType = 'image';
-let pendingFiles = [];   // { id, file, name, size, status, url, downloadUrl, error }
+let pendingFiles = [];
 let isUploading = false;
 let uidCounter = 0;
 let toastTimeout;
@@ -752,27 +750,29 @@ function nowString() {
 }
 
 /**
- * Build a direct download URL from a Cloudinary URL.
- * Adds fl_attachment flag so browser forces download.
- * Works for image / video / raw resource types.
+ * Build a direct download URL with the ORIGINAL filename.
+ * Uses Cloudinary's fl_attachment:filename flag.
  */
-function makeDownloadUrl(url) {
+function makeDownloadUrl(url, originalName) {
   if (typeof url !== 'string') return url;
   if (!url.includes('res.cloudinary.com')) return url;
-  
-  // 'raw' URLs (PDF/ZIP) සඳහා fl_attachment එකතු කරන්නේ නැත (401 error එක එන නිසා)
-  if (url.includes('/raw/upload/')) return url;
-  
-  if (url.includes('fl_attachment')) return url; // already has it
-  if (url.includes('/upload/')) {
-    return url.replace('/upload/', '/upload/fl_attachment/');
+  if (url.includes('fl_attachment')) return url;
+
+  // Sanitize name for URL (avoid broken links)
+  let safeName = (originalName || 'download').replace(/[^a-zA-Z0-9.\-_]/g, '_');
+
+  if (url.includes('/raw/upload/')) {
+    return url.replace('/raw/upload/', `/raw/upload/fl_attachment:${safeName}/`);
+  }
+  if (url.includes('/image/upload/')) {
+    return url.replace('/image/upload/', `/image/upload/fl_attachment:${safeName}/`);
+  }
+  if (url.includes('/video/upload/')) {
+    return url.replace('/video/upload/', `/video/upload/fl_attachment:${safeName}/`);
   }
   return url;
 }
 
-/**
- * Detect category of a file. Returns null if unknown.
- */
 function fileCategory(file) {
   const t = (file.type || '').toLowerCase();
   if (t.startsWith('image/')) return 'image';
@@ -786,10 +786,6 @@ function fileCategory(file) {
   return null;
 }
 
-/**
- * Decide whether a file matches the currently selected tab.
- * The "File" tab accepts ANY file.
- */
 function fileMatchesType(file, type) {
   if (type === 'file') return true;
   return fileCategory(file) === type;
@@ -833,25 +829,40 @@ async function copyText(text) {
 }
 
 /**
- * Force download a file. Uses fl_attachment URL directly for images/videos.
- * For 'raw' (PDF/ZIP) files, uses standard a.download attribute.
+ * Force download a file. 
+ * Uses Blob method to guarantee the original filename is saved.
  */
 async function downloadFile(url, filename) {
-  const isRaw = url.includes('/raw/upload/');
-  const dlUrl = makeDownloadUrl(url);
-
-  const a = document.createElement('a');
-  a.href = dlUrl;
-  if (filename) a.download = filename;
-  
-  // raw files වලට new tab එකේ අවශ්‍ය නැහැ, a.download එකෙන්ම වැඩ කරනවා
-  if (!isRaw) {
+  try {
+    // Fetch the file as a Blob
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Fetch failed');
+    const blob = await res.blob();
+    
+    // Create a temporary local URL
+    const blobUrl = URL.createObjectURL(blob);
+    
+    // Trigger download with original filename
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename || 'download';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    
+    // Cleanup memory
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+  } catch (e) {
+    // Fallback: Use Cloudinary fl_attachment link if Blob fails (e.g., CORS block)
+    const dlUrl = makeDownloadUrl(url, filename);
+    const a = document.createElement('a');
+    a.href = dlUrl;
     a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
 }
 
 /* =====================================
@@ -903,7 +914,6 @@ function renderFileList() {
       ready:'Ready', uploading:'Uploading', done:'Done', error:'Failed'
     }[item.status] || 'Ready';
 
-    // Show the actual category icon if we can detect it
     const cat = fileCategory(item.file) || 'file';
     const iconClass = TYPE_META[cat] ? TYPE_META[cat].icon : 'fa-file';
 
@@ -930,7 +940,6 @@ function renderFileList() {
   uploadBtn.disabled = isUploading || pendingFiles.length === 0;
 }
 
-/* ADD FILES */
 function addFiles(list) {
   const incoming = Array.from(list);
 
@@ -939,12 +948,10 @@ function addFiles(list) {
       showToast('උපරිම files ' + MAX_FILES + 'ක් විතරයි!', 'error');
       break;
     }
-
     if (!fileMatchesType(f, currentType)) {
       showToast(f.name + ' — invalid ' + TYPE_META[currentType].label + ' file', 'error');
       continue;
     }
-
     const dup = pendingFiles.some(
       p => p.file.name === f.name && p.file.size === f.size
     );
@@ -961,7 +968,6 @@ function addFiles(list) {
       error: ''
     });
   }
-
   renderFileList();
 }
 
@@ -1011,7 +1017,6 @@ document.querySelectorAll('.server-card').forEach(card => {
    UPLOAD
 ===================================== */
 async function uploadOne(file, server) {
-  // image -> image, video/audio -> video, file -> raw (PDF, ZIP etc.)
   const endpoint =
     currentType === 'image' ? 'image'
   : currentType === 'file'  ? 'raw'
@@ -1020,6 +1025,15 @@ async function uploadOne(file, server) {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', server.uploadPreset);
+
+  // Set public_id to keep the original filename in the URL
+  let safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  if (endpoint === 'raw') {
+    formData.append('public_id', safeName);
+  } else {
+    let baseName = safeName.substring(0, safeName.lastIndexOf('.')) || safeName;
+    formData.append('public_id', baseName);
+  }
 
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${server.cloudName}/${endpoint}/upload`,
@@ -1035,9 +1049,6 @@ async function uploadOne(file, server) {
   return data.secure_url;
 }
 
-/**
- * Upload multiple files with a concurrency limit for speed.
- */
 async function uploadWithConcurrency(todo, server) {
   const results = [];
   const queue = [...todo];
@@ -1063,7 +1074,9 @@ async function uploadWithConcurrency(todo, server) {
             const viewUrl = await uploadOne(item.file, server);
             item.status = 'done';
             item.url = viewUrl;
-            item.downloadUrl = makeDownloadUrl(viewUrl);
+            // Pass original name to ensure fl_attachment uses correct name
+            item.downloadUrl = makeDownloadUrl(viewUrl, item.name);
+            
             results.push({
               url: viewUrl,
               downloadUrl: item.downloadUrl,
@@ -1083,7 +1096,6 @@ async function uploadWithConcurrency(todo, server) {
         })();
       }
     }
-
     next();
   });
 }
@@ -1130,7 +1142,7 @@ async function uploadAll() {
 uploadBtn.addEventListener('click', uploadAll);
 
 /* =====================================
-   RESULTS (showing download URLs)
+   RESULTS
 ===================================== */
 function renderResults() {
   const done = pendingFiles.filter(i => i.status === 'done' && i.url);
@@ -1148,7 +1160,7 @@ function renderResults() {
       ${done.length} Direct Download Link${done.length > 1 ? 's' : ''} Ready
     </div>
     <p class="result-description">
-      පහල තියන download link එක copy කරලා ඕනෑම තැනක share කරන්න. Click කරාම සිරාවටම download වෙනවා.
+      පහල තියන download link එක copy කරලා ඕනෑම තැනක share කරන්න. Click කරාම ඔරිජිනල් නමින්ම download වෙනවා.
     </p>
     <div class="link-list">
       ${done.map(item => {
@@ -1170,7 +1182,7 @@ function renderResults() {
             <button class="mini-btn" data-open="${esc(item.url)}">
               <i class="fa-solid fa-eye"></i> Preview
             </button>
-            <button class="mini-btn" data-download="${esc(item.downloadUrl)}" data-filename="${esc(item.name)}">
+            <button class="mini-btn" data-download="${esc(item.url)}" data-filename="${esc(item.name)}">
               <i class="fa-solid fa-cloud-arrow-down"></i> Download
             </button>
           </div>
@@ -1188,10 +1200,11 @@ function getSaved() {
     const raw = localStorage.getItem(SAVED_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(parsed)) return [];
-    // Migrate old entries: ensure downloadUrl exists
+    
+    // Migrate old entries
     return parsed.map(item => ({
       ...item,
-      downloadUrl: item.downloadUrl || makeDownloadUrl(item.url)
+      downloadUrl: item.downloadUrl || makeDownloadUrl(item.url, item.name)
     }));
   } catch (e) {
     return [];
@@ -1257,7 +1270,7 @@ function renderSaved() {
           <button class="mini-btn" data-open="${esc(item.url)}" title="Preview">
             <i class="fa-solid fa-eye"></i>
           </button>
-          <button class="mini-btn" data-download="${esc(item.downloadUrl || item.url)}" data-filename="${esc(item.name)}" title="Download">
+          <button class="mini-btn" data-download="${esc(item.url)}" data-filename="${esc(item.name)}" title="Download">
             <i class="fa-solid fa-cloud-arrow-down"></i>
           </button>
           <button class="mini-btn danger" data-del="${esc(item.url)}" title="Delete">
@@ -1340,4 +1353,4 @@ renderSaved();
 </script>
 
 </body>
-</html>
+   </html>
